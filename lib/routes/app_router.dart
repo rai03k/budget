@@ -87,9 +87,9 @@ class MainScreen extends StatelessWidget {
               initialLocation: index == navigationShell.currentIndex,
             );
           },
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-            BottomNavigationBarItem(icon: Icon(Icons.pie_chart), label: ''),
+          items: [
+            _buildAnimatedNavItem(Icons.home, 0),
+            _buildAnimatedNavItem(Icons.pie_chart, 1),
             BottomNavigationBarItem(
               icon: Stack(
                 alignment: Alignment.center,
@@ -107,14 +107,50 @@ class MainScreen extends StatelessWidget {
               ),
               label: '',
             ),
-            BottomNavigationBarItem(icon: Icon(Icons.add), label: ''),
-            BottomNavigationBarItem(icon: Icon(Icons.flag), label: ''),
+            _buildAnimatedNavItem(Icons.add, 3),
+            _buildAnimatedNavItem(Icons.flag, 4),
           ],
           type: BottomNavigationBarType.fixed,
           showSelectedLabels: false,
           showUnselectedLabels: false,
         ),
       ),
+    );
+  }
+
+  BottomNavigationBarItem _buildAnimatedNavItem(IconData icon, int index) {
+    return BottomNavigationBarItem(
+      icon: TweenAnimationBuilder<double>(
+        tween: Tween<double>(
+          begin: 0.0,
+          end: navigationShell.currentIndex == index ? 1.0 : 0.0,
+        ),
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        builder: (context, value, child) {
+          return Transform.scale(
+            scale:
+                navigationShell.currentIndex == index
+                    ? 1.0 -
+                        0.2 *
+                            (1.0 - value) // タップ時に1.2倍になり元に戻る
+                    : 1.0,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: const EdgeInsets.all(8),
+              child: Icon(
+                icon,
+                color:
+                    navigationShell.currentIndex == index
+                        ? Colors.black
+                        : Colors.grey,
+                size: navigationShell.currentIndex == index ? 28 : 24,
+              ),
+            ),
+          );
+        },
+      ),
+      label: '',
     );
   }
 }
