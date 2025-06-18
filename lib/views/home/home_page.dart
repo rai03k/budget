@@ -1,14 +1,24 @@
 import 'package:budget/common/widget/common_app_bar.dart';
 import 'package:budget/common/widget/common_scaffold.dart';
+import 'package:budget/views/home/home_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:intl/intl.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends ConsumerWidget {
   const HomePage({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final homeState = ref.watch(homeViewModelProvider);
+    final homeViewModel = ref.read(homeViewModelProvider.notifier);
+
+    // 取引データの変更を監視してホーム画面を自動更新
+    ref.listen(homeViewModelProvider, (previous, next) {
+      // エラー状態でrefreshボタンが押された時の処理は既に実装済み
+    });
     return CommonScaffold(
       appBar: CommonAppBar(title: 'ホーム'),
       body: SafeArea(
@@ -54,45 +64,94 @@ class HomePage extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                _buildSavingsCard(context: context, savings: '123'),
 
-                const SizedBox(height: 24),
+                // 支出データの表示
+                homeState.when(
+                  data: (state) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSavingsCard(
+                        context: context, 
+                        savings: NumberFormat('#,###').format(state.totalSavings)
+                      ),
+                      const SizedBox(height: 24),
 
-                // 最近の支出セクション
-                Text(
-                  '最近の支出',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onPrimary,
+                      // 最近の支出セクション
+                      Text(
+                        '最近の支出',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // 今日の支出カード
+                      _buildExpenseCard(
+                        context: context,
+                        title: '今日の支出',
+                        amount: NumberFormat('#,###').format(state.todayExpense),
+                        comparison: '昨日 ¥${NumberFormat('#,###').format(state.yesterdayExpense)}',
+                        percentage: state.yesterdayComparison,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // 今週の支出カード
+                      _buildExpenseCard(
+                        context: context,
+                        title: '今週の支出',
+                        amount: NumberFormat('#,###').format(state.thisWeekExpense),
+                        comparison: '先週 ¥${NumberFormat('#,###').format(state.lastWeekExpense)}',
+                        percentage: state.lastWeekComparison,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // 今月の支出カード
+                      _buildExpenseCard(
+                        context: context,
+                        title: '今月の支出',
+                        amount: NumberFormat('#,###').format(state.thisMonthExpense),
+                        comparison: '先月 ¥${NumberFormat('#,###').format(state.lastMonthExpense)}',
+                        percentage: state.lastMonthComparison,
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 8),
-
-                // 今日の支出カード
-                _buildExpenseCard(
-                  context: context,
-                  title: '今日の支出',
-                  amount: '120',
-                  comparison: '昨日 ¥0',
-                ),
-                const SizedBox(height: 16),
-
-                // 今週の支出カード
-                _buildExpenseCard(
-                  context: context,
-                  title: '今週の支出',
-                  amount: '5,432',
-                  comparison: '先週 ¥1,232',
-                ),
-                const SizedBox(height: 16),
-
-                // 今月の支出カード
-                _buildExpenseCard(
-                  context: context,
-                  title: '今月の支出',
-                  amount: '1,234,567',
-                  comparison: '先月 ¥43,421',
+                  loading: () => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSavingsCard(context: context, savings: '---'),
+                      const SizedBox(height: 24),
+                      Text(
+                        '最近の支出',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // ローディング状態でも基本レイアウトを維持
+                      _buildLoadingExpenseCard(context, '今日の支出'),
+                      const SizedBox(height: 16),
+                      _buildLoadingExpenseCard(context, '今週の支出'),
+                      const SizedBox(height: 16),
+                      _buildLoadingExpenseCard(context, '今月の支出'),
+                    ],
+                  ),
+                  error: (error, stack) => Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('データの読み込みに失敗しました'),
+                        const SizedBox(height: 8),
+                        ElevatedButton(
+                          onPressed: () => homeViewModel.refresh(),
+                          child: const Text('再読み込み'),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -156,6 +215,7 @@ class HomePage extends StatelessWidget {
     required String title,
     required String amount,
     required String comparison,
+    required double percentage,
   }) {
     return SizedBox(
       width: double.infinity,
@@ -179,19 +239,20 @@ class HomePage extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  '1000%',
+                  getComparisonText(percentage),
                   style: TextStyle(
                     fontSize: 16,
-                    color: Theme.of(context).colorScheme.onPrimary,
+                    color: _getComparisonColor(context, getComparisonType(percentage)),
                   ),
                 ),
                 const SizedBox(
                   width: 4,
                 ),
-                HugeIcon(
-                    size: 20,
-                    icon: HugeIcons.strokeRoundedCircleArrowUpRight,
-                    color: Theme.of(context).colorScheme.onPrimary),
+                Icon(
+                  _getComparisonIcon(getComparisonType(percentage)),
+                  size: 20,
+                  color: _getComparisonColor(context, getComparisonType(percentage)),
+                ),
               ],
             ),
             const SizedBox(height: 6),
@@ -291,6 +352,101 @@ class HomePage extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// 比較タイプに基づいてアイコンを取得
+  IconData _getComparisonIcon(ComparisonType type) {
+    switch (type) {
+      case ComparisonType.increase:
+        return Icons.trending_up;
+      case ComparisonType.decrease:
+        return Icons.trending_down;
+      case ComparisonType.same:
+        return Icons.trending_flat;
+    }
+  }
+
+  /// 比較タイプに基づいて色を取得
+  Color _getComparisonColor(BuildContext context, ComparisonType type) {
+    switch (type) {
+      case ComparisonType.increase:
+        return Colors.red; // 支出増加は赤
+      case ComparisonType.decrease:
+        return Colors.green; // 支出減少は緑
+      case ComparisonType.same:
+        return Theme.of(context).colorScheme.onPrimary;
+    }
+  }
+
+  /// ローディング中の支出カード
+  Widget _buildLoadingExpenseCard(BuildContext context, String title) {
+    return SizedBox(
+      width: double.infinity,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).colorScheme.onSecondary,
+                  ),
+                ),
+                const Spacer(),
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            SizedBox(
+              height: 50,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '¥ ---',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '読み込み中...',
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.onSecondary,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ],
         ),
       ),
     );

@@ -19,7 +19,7 @@ class BudgetViewModel extends _$BudgetViewModel {
       // 予算データを取得
       final budgets = await _databaseService.getAllBudgets();
 
-      // Category → CategoryState に変換
+      // Category → CategoryState に変換（データベースから既にソート順で取得済み）
       final categoryStates = categories
           .map((c) => CategoryState(
                 id: c.id,

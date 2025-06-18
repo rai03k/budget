@@ -135,6 +135,11 @@ class DatabaseService {
     return await _transactionRepository.deleteTransaction(id);
   }
 
+  /// 日付範囲で取引を取得
+  Future<List<Transaction>> getTransactionsByDateRange(DateTime start, DateTime end) async {
+    return await _transactionRepository.getTransactionsByDateRange(start, end);
+  }
+
   // --- Budget 関連のメソッド ---
 
   /// 全予算を取得

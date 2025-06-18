@@ -3,6 +3,9 @@ import 'package:budget/common/enum/app_colors.dart';
 import 'package:budget/common/enum/app_icon.dart';
 import 'package:budget/common/enum/category_icons.dart';
 import 'package:budget/service/database_service.dart';
+import 'package:budget/provider/category/category_provider.dart';
+import 'package:budget/views/input/input_view_model.dart';
+import 'package:budget/views/budget/budget_view_model.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'category_create_state.dart';
@@ -49,6 +52,11 @@ class CategoryCreateViewModel extends _$CategoryCreateViewModel {
         icon: state.selectedIcon,
         iconColor: state.selectedColor,
       );
+      
+      // カテゴリ追加後に関連Providerを無効化
+      ref.invalidate(categoryProvider);        // カテゴリ一覧を更新
+      ref.invalidate(inputViewModelProvider);  // 入力画面のカテゴリ選択肢を更新
+      ref.invalidate(budgetViewModelProvider); // 予算画面のカテゴリ情報を更新
       
       state = state.copyWith(isLoading: false);
       return 'success';

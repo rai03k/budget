@@ -1,17 +1,20 @@
 import 'package:budget/common/widget/common_app_bar.dart';
 import 'package:budget/common/widget/common_scaffold.dart';
 import 'package:budget/views/budget/widget/budget_card.dart';
+import 'package:budget/views/budget/budget_view_model.dart';
+import 'package:budget/views/budget/budget_state.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-class BudgetPage extends StatefulWidget {
+class BudgetPage extends ConsumerStatefulWidget {
   const BudgetPage({super.key});
 
   @override
-  _BudgetPageState createState() => _BudgetPageState();
+  ConsumerState<BudgetPage> createState() => _BudgetPageState();
 }
 
-class _BudgetPageState extends State<BudgetPage> {
+class _BudgetPageState extends ConsumerState<BudgetPage> {
   PageController _pageController = PageController();
   DateTime _currentDate = DateTime.now();
   List<DateTime> _months = [];
@@ -154,11 +157,33 @@ class _BudgetPageState extends State<BudgetPage> {
 
   // 各月のコンテンツを構築
   Widget _buildMonthContent(DateTime monthDate) {
-    return ListView.builder(
-      itemCount: 3,
-      itemBuilder: (BuildContext context, int index) {
-        return BudgetCard();
-      },
+    final budgetState = ref.watch(budgetViewModelProvider);
+    
+    return budgetState.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('データの読み込みに失敗しました'),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: () => ref.refresh(budgetViewModelProvider),
+              child: const Text('再読み込み'),
+            ),
+          ],
+        ),
+      ),
+      data: (state) => ListView.builder(
+        itemCount: state.categories.length,
+        itemBuilder: (BuildContext context, int index) {
+          final category = state.categories[index];
+          return BudgetCard(
+            categoryState: category,
+            monthDate: monthDate,
+          );
+        },
+      ),
     );
   }
 

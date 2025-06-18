@@ -11,6 +11,8 @@ import 'package:budget/service/receipt_analysis_service.dart';
 import 'package:budget/views/input/input_view_model.dart';
 import 'package:budget/views/input/scanner_result/scanner_result_state.dart';
 import 'package:budget/views/calendar/calendar_view_model.dart';
+import 'package:budget/views/home/home_view_model.dart';
+import 'package:budget/views/budget/budget_view_model.dart';
 import 'package:camera/camera.dart';
 import 'package:firebase_ai/firebase_ai.dart';
 import 'package:firebase_ai/firebase_ai.dart' as ai;
@@ -103,11 +105,11 @@ class ScannerResultViewModel extends _$ScannerResultViewModel {
       // DatabaseServiceを呼び出して一括保存
       await _databaseService.saveAllTransactions(transactionsToSave);
 
-      // カレンダーのデータを更新するためにProviderを無効化
-      ref.invalidate(calendarViewModelProvider);
-      
-      // 他の関連Providerも更新
-      ref.invalidate(transactionProvider);
+      // 関連するProviderを無効化してリアルタイム更新
+      ref.invalidate(calendarViewModelProvider);  // カレンダー画面
+      ref.invalidate(homeViewModelProvider);      // ホーム画面
+      ref.invalidate(budgetViewModelProvider);    // 予算画面
+      ref.invalidate(transactionProvider);        // 取引データ
 
       return true; // 成功
     } catch (e) {

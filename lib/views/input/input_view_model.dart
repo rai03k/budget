@@ -2,6 +2,8 @@ import 'package:budget/data/local/app_database.dart' as db;
 import 'package:budget/service/database_service.dart';
 import 'package:budget/views/input/input_state.dart';
 import 'package:budget/views/calendar/calendar_view_model.dart';
+import 'package:budget/views/home/home_view_model.dart';
+import 'package:budget/views/budget/budget_view_model.dart';
 import 'package:budget/provider/category/category_provider.dart';
 import 'package:budget/provider/transaction/transaction_provider.dart';
 import 'package:firebase_ai/firebase_ai.dart';
@@ -66,12 +68,12 @@ class InputViewModel extends _$InputViewModel {
         categoryId: current.selectedCategory!.id,
       );
       
-      // カレンダーのデータを更新するためにProviderを無効化
-      ref.invalidate(calendarViewModelProvider);
-      
-      // 予算データも更新する
-      ref.invalidate(categoryProvider);
-      ref.invalidate(transactionProvider);
+      // 関連するProviderを無効化してリアルタイム更新
+      ref.invalidate(calendarViewModelProvider);  // カレンダー画面
+      ref.invalidate(homeViewModelProvider);      // ホーム画面
+      ref.invalidate(budgetViewModelProvider);    // 予算画面
+      ref.invalidate(categoryProvider);           // カテゴリデータ
+      ref.invalidate(transactionProvider);        // 取引データ
       
       return 'success';
     } catch (e) {

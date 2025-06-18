@@ -56,4 +56,8 @@ class TransactionRepository {
   Future<int> deleteTransaction(int id) async {
     return await _database.transactionDao.deleteTransaction(id);
   }
+
+  Future<List<Transaction>> getTransactionsByDateRange(DateTime start, DateTime end) async {
+    return await _database.transactionDao.getTransactionsByDateRange(start, end);
+  }
 }

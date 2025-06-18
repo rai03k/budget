@@ -1,8 +1,18 @@
 import 'package:budget/common/widget/common_category_icon.dart';
+import 'package:budget/provider/category/category_provider.dart';
+import 'package:budget/common/enum/category_icons.dart';
+import 'package:budget/common/enum/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class BudgetCard extends StatelessWidget {
-  const BudgetCard({super.key});
+  final CategoryState categoryState;
+  final DateTime monthDate;
+  
+  const BudgetCard({
+    super.key,
+    required this.categoryState,
+    required this.monthDate,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -19,11 +29,14 @@ class BudgetCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
-              CommonCategoryIcon(color: Colors.red, icon: Icons.abc),
+              CommonCategoryIcon(
+                color: categoryState.color.color(context), 
+                icon: categoryState.icon.iconData
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'テスト',
+                  categoryState.title,
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onPrimary,
                     fontSize: 16,
@@ -70,11 +83,12 @@ class BudgetCard extends StatelessWidget {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(4),
                         child: LinearProgressIndicator(
-                          value: 3,
+                          value: 0.3, // 仮の値（30%）
                           //category.budget?.budgetAmount?.toDouble() ?? 0,
                           backgroundColor: const Color(0xFFD5D7DA),
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.blue),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            categoryState.color.color(context),
+                          ),
                           minHeight: 6, // プログレスバーの高さを6ピクセルに設定（太さを調整）
                         ),
                       ),

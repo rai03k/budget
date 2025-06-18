@@ -148,6 +148,12 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
   // 取引を削除
   Future<int> deleteTransaction(int id) =>
       (delete(transactionTable)..where((t) => t.id.equals(id))).go();
+
+  // 日付範囲で取引を取得
+  Future<List<Transaction>> getTransactionsByDateRange(DateTime start, DateTime end) =>
+      (select(transactionTable)
+        ..where((t) => t.date.isBetweenValues(start, end)))
+      .get();
 }
 
 @DriftAccessor(tables: [BudgetTable])
