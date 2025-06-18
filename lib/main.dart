@@ -1,8 +1,32 @@
+import 'package:budget/app_router.dart';
+import 'package:budget/firebase_options.dart';
+import 'package:budget/service/database_service.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:budget/routes/app_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:firebase_ai/firebase_ai.dart';
+import 'firebase_options.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'app_theme.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  await initializeDateFormatting('ja_JP', null);
+
+  // Driftデータベースサービスを初期化
+  DatabaseService.instance;
+
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -11,9 +35,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'MVVM App',
-      theme: ThemeData(primarySwatch: Colors.green, useMaterial3: true),
-      routerConfig: goRouter, // 直接 goRouter を渡す
+      title: '家計簿アプリ',
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
+      routerConfig: goRouter,
     );
   }
 }

@@ -1,0 +1,454 @@
+import 'package:budget/common/widget/common_app_bar.dart';
+import 'package:budget/common/widget/common_scaffold.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
+
+class HomePage extends StatelessWidget {
+  const HomePage({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return CommonScaffold(
+      appBar: CommonAppBar(title: 'ホーム'),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 先週の支出を見直すバナー
+                _buildWeeklyExpenseReview(context),
+                const SizedBox(height: 24),
+
+                // 節約額セクション
+                Row(
+                  children: [
+                    Text(
+                      '節約額',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                    ),
+                    const SizedBox(
+                      width: 8,
+                    ),
+                    CircleAvatar(
+                      radius: 12,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        iconSize: 18,
+                        icon: Icon(
+                          Icons.question_mark,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                        onPressed: () {
+                          _showHelpDialog(context);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                _buildSavingsCard(context: context, savings: '123'),
+
+                const SizedBox(height: 24),
+
+                // 最近の支出セクション
+                Text(
+                  '最近の支出',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // 今日の支出カード
+                _buildExpenseCard(
+                  context: context,
+                  title: '今日の支出',
+                  amount: '120',
+                  comparison: '昨日 ¥0',
+                ),
+                const SizedBox(height: 16),
+
+                // 今週の支出カード
+                _buildExpenseCard(
+                  context: context,
+                  title: '今週の支出',
+                  amount: '5,432',
+                  comparison: '先週 ¥1,232',
+                ),
+                const SizedBox(height: 16),
+
+                // 今月の支出カード
+                _buildExpenseCard(
+                  context: context,
+                  title: '今月の支出',
+                  amount: '1,234,567',
+                  comparison: '先月 ¥43,421',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSavingsCard(
+      {required BuildContext context, required String savings}) {
+    return SizedBox(
+      width: double.infinity,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '今までの節約額',
+              style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.onSecondary),
+            ),
+            const SizedBox(
+              height: 6,
+            ),
+            SizedBox(
+              height: 50,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '¥ $savings',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExpenseCard({
+    required BuildContext context,
+    required String title,
+    required String amount,
+    required String comparison,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).colorScheme.onSecondary,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '1000%',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
+                const SizedBox(
+                  width: 4,
+                ),
+                HugeIcon(
+                    size: 20,
+                    icon: HugeIcons.strokeRoundedCircleArrowUpRight,
+                    color: Theme.of(context).colorScheme.onPrimary),
+              ],
+            ),
+            const SizedBox(height: 6),
+            SizedBox(
+              height: 50,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Expanded(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '¥ $amount',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              comparison,
+              style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.onSecondary),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeeklyExpenseReview(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: colorScheme.primary,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          context.go('/weekly-review');
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Stack(
+                clipBehavior: Clip.none, // 子が親の境界からはみ出すのを許可
+                children: [
+                  HugeIcon(
+                    // メールアイコン
+                    icon: HugeIcons.strokeRoundedMail01,
+                    color: colorScheme.onPrimary,
+                  ),
+                  // 赤い丸をアイコンの右上に配置
+                  Positioned(
+                    right: -4,
+                    top: -2,
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.error,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.primary,
+                          width: 2.0,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  '先週の支出を見直そう！',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: colorScheme.onPrimary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              HugeIcon(
+                icon: HugeIcons.strokeRoundedArrowRight01,
+                color: colorScheme.onPrimary,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showHelpDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return ArrowDialog(
+          child: Container(
+            width: 280,
+            padding: EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.help, color: Colors.blue, size: 24),
+                    SizedBox(width: 8),
+                    Text(
+                      'ヘルプ',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Spacer(),
+                    IconButton(
+                      icon: Icon(Icons.close, size: 20),
+                      onPressed: () => Navigator.of(context).pop(),
+                      padding: EdgeInsets.zero,
+                      constraints: BoxConstraints(),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12),
+                Text(
+                  'このアプリの使い方：',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: 8),
+                _buildHelpItem('1. ボタンをタップして操作を開始'),
+                _buildHelpItem('2. 設定画面で好みに合わせてカスタマイズ'),
+                _buildHelpItem('3. 困ったときはこのヘルプを参照'),
+                SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text('OK'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHelpItem(String text) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.arrow_right, size: 16, color: Colors.grey[600]),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ArrowDialog extends StatelessWidget {
+  final Widget child;
+
+  const ArrowDialog({Key? key, required this.child}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Stack(
+        children: [
+          // メインのダイアログボックス
+          Container(
+            margin: EdgeInsets.only(top: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: child,
+          ),
+          // 矢印部分
+          Positioned(
+            top: 0,
+            left: 20,
+            child: CustomPaint(
+              size: Size(24, 12),
+              painter: ArrowPainter(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ArrowPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
+    final shadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.2)
+      ..style = PaintingStyle.fill;
+
+    // 影の矢印
+    final shadowPath = Path();
+    shadowPath.moveTo(size.width / 2 + 1, 1);
+    shadowPath.lineTo(0 + 1, size.height + 1);
+    shadowPath.lineTo(size.width + 1, size.height + 1);
+    shadowPath.close();
+    canvas.drawPath(shadowPath, shadowPaint);
+
+    // メインの矢印
+    final path = Path();
+    path.moveTo(size.width / 2, 0);
+    path.lineTo(0, size.height);
+    path.lineTo(size.width, size.height);
+    path.close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
+  }
+}
