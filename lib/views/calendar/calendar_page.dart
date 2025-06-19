@@ -563,32 +563,49 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                       separatorBuilder: (context, index) => Container(),
                       itemBuilder: (context, index) {
                         final transaction = transactions[index];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 8, horizontal: 16),
-                          child: Row(
-                            children: [
-                              CommonCategoryIcon(
-                                  color:
-                                      transaction.category.color.color(context),
-                                  icon: transaction.category.icon.iconData),
-                              const SizedBox(
-                                width: 16,
-                              ),
-                              Text(
-                                transaction.itemName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w500,
+                        return Dismissible(
+                          key: ValueKey(transaction.id),
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            color: Colors.red,
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 16),
+                            child: const Icon(
+                              Icons.delete,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                          ),
+                          onDismissed: (direction) {
+                            viewModel.deleteTransaction(transaction.id);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 16),
+                            child: Row(
+                              children: [
+                                CommonCategoryIcon(
+                                    color:
+                                        transaction.category.color.color(context),
+                                    icon: transaction.category.icon.iconData),
+                                const SizedBox(
+                                  width: 16,
                                 ),
-                              ),
-                              const Spacer(),
-                              Text(
-                                '¥${transaction.amount}',
-                                style: TextStyle(
-                                  fontSize: 16,
+                                Text(
+                                  transaction.itemName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
-                              ),
-                            ],
+                                const Spacer(),
+                                Text(
+                                  '¥${transaction.amount}',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         );
                       },

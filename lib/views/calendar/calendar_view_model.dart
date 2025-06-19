@@ -2,6 +2,8 @@ import 'package:budget/common/enum/app_colors.dart';
 import 'package:budget/provider/category/category_provider.dart';
 import 'package:budget/provider/transaction/transaction_provider.dart';
 import 'package:budget/service/database_service.dart';
+import 'package:budget/views/home/home_view_model.dart';
+import 'package:budget/views/budget/budget_view_model.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'calendar_state.dart';
@@ -15,7 +17,7 @@ class CalendarViewModel extends _$CalendarViewModel {
   @override
   Future<CalendarState> build() async {
     // 取引データの変更を監視するために、transactionProviderに依存
-    ref.watch(transactionProvider);
+    // ref.watch(transactionProvider); // 一時的にコメントアウト
     
     try {
       final transactionsWithCategory = await _databaseService.getAllTransactionsWithCategory();
@@ -181,6 +183,46 @@ class CalendarViewModel extends _$CalendarViewModel {
     state = await AsyncValue.guard(() => build());
   }
 
+  /// ボトムシートの状態を保持しながらデータを再読み込み
+  Future<void> refreshPreservingBottomSheet() async {
+    final currentState = await future;
+    
+    try {
+      final transactionsWithCategory = await _databaseService.getAllTransactionsWithCategory();
+
+      final transactionStates = transactionsWithCategory.map((transactionWithCategory) {
+        final transaction = transactionWithCategory.transaction;
+        final category = transactionWithCategory.category;
+
+        final categoryState = CategoryState(
+          id: category.id,
+          title: category.categoryName,
+          icon: category.icon,
+          color: category.iconColor,
+        );
+
+        return TransactionState(
+          id: transaction.id,
+          amount: transaction.amount,
+          date: transaction.date,
+          itemName: transaction.itemName,
+          category: categoryState,
+        );
+      }).toList();
+
+      // 既存の状態を保持しつつ、取引データのみ更新
+      state = AsyncValue.data(currentState.copyWith(
+        transactions: transactionStates,
+        isLoading: false,
+      ));
+    } catch (e) {
+      state = AsyncValue.data(currentState.copyWith(
+        isLoading: false,
+        errorMessage: 'データの読み込みに失敗しました: $e',
+      ));
+    }
+  }
+
   /// 「今日」ボタンが押された時の処理
   void goToToday() async {
     final today = DateTime.now();
@@ -222,5 +264,37 @@ class CalendarViewModel extends _$CalendarViewModel {
   /// 選択されたセルの矩形情報をクリア
   void clearSelectedCellRect() {
     // 矩形情報をクリア（必要に応じて実装）
+  }
+
+  /// 取引を削除
+  Future<void> deleteTransaction(int transactionId) async {
+    try {
+      // まず、ローカル状態から削除してUI即座に更新
+      final currentState = await future;
+      final updatedTransactions = currentState.transactions
+          .where((transaction) => transaction.id != transactionId)
+          .toList();
+      
+      // ローカル状態を更新（ボトムシート状態は保持）
+      state = AsyncValue.data(currentState.copyWith(
+        transactions: updatedTransactions,
+      ));
+      
+      // バックグラウンドでデータベース削除
+      await _databaseService.deleteTransaction(transactionId);
+      
+      // 他の画面のプロバイダーを遅延して無効化
+      Future.delayed(const Duration(milliseconds: 100), () {
+        ref.invalidate(transactionProvider);        // 取引データ
+        ref.invalidate(homeViewModelProvider);      // ホーム画面
+        ref.invalidate(budgetViewModelProvider);    // 予算画面
+      });
+      
+    } catch (e) {
+      // エラーハンドリング（必要に応じて実装）
+      print('Failed to delete transaction: $e');
+      // エラーが発生した場合は元の状態に戻す
+      await refreshPreservingBottomSheet();
+    }
   }
 }
