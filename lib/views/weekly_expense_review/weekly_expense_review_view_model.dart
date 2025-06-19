@@ -15,7 +15,7 @@ class WeeklyExpenseReviewViewModel extends _$WeeklyExpenseReviewViewModel {
       final now = DateTime.now();
       final weekAgo = now.subtract(const Duration(days: 7));
       
-      final transactionsWithCategory = await _databaseService.getAllTransactionsWithCategory();
+      final transactionsWithCategory = await _databaseService.getAllTransactionsWithOptionalCategory();
       
       // 過去1週間の取引をフィルタリング
       final weeklyTransactions = transactionsWithCategory
@@ -29,7 +29,8 @@ class WeeklyExpenseReviewViewModel extends _$WeeklyExpenseReviewViewModel {
         
         // カテゴリのアイコンから絵文字を生成（簡単な例）
         String emoji = '🍫'; // デフォルト
-        switch (category.icon.name) {
+        if (category != null) {
+          switch (category.icon.name) {
           case 'restaurant':
             emoji = '🍽️';
             break;
@@ -44,6 +45,7 @@ class WeeklyExpenseReviewViewModel extends _$WeeklyExpenseReviewViewModel {
             break;
           default:
             emoji = '💰';
+          }
         }
 
         return ExpenseItem(

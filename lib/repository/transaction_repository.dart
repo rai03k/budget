@@ -60,4 +60,9 @@ class TransactionRepository {
   Future<List<Transaction>> getTransactionsByDateRange(DateTime start, DateTime end) async {
     return await _database.transactionDao.getTransactionsByDateRange(start, end);
   }
+
+  /// すべての取引を取得（削除されたカテゴリの支出も含む）
+  Future<List<TransactionWithCategory>> getAllTransactionsWithOptionalCategory() async {
+    return await _database.transactionDao.getAllTransactionsWithOptionalCategory();
+  }
 }

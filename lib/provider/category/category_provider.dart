@@ -18,6 +18,14 @@ class CategoryState with _$CategoryState {
       @Default(CategoryIcons.restaurant) CategoryIcons icon,
       @Default(AppColors.green) AppColors color,
       BudgetState? budget}) = _CategoryState;
+
+  // 削除されたカテゴリー用のデフォルトカテゴリ
+  static const CategoryState unknownCategory = CategoryState(
+    id: -1,
+    title: '不明',
+    icon: CategoryIcons.question,
+    color: AppColors.grey,
+  );
 }
 
 @Riverpod(keepAlive: true)

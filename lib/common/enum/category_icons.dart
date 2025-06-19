@@ -19,6 +19,7 @@ enum CategoryIcons {
   work,
   school,
   carRental,
+  question,
 }
 
 extension CategoryIconsExtension on CategoryIcons {
@@ -60,6 +61,8 @@ extension CategoryIconsExtension on CategoryIcons {
         return Icons.car_rental;
       case CategoryIcons.restaurant:
         return Icons.restaurant;
+      case CategoryIcons.question:
+        return Icons.help_outline;
     }
   }
 }

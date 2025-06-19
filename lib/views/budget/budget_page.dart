@@ -17,66 +17,120 @@ class BudgetPage extends ConsumerStatefulWidget {
 class _BudgetPageState extends ConsumerState<BudgetPage> {
   PageController _pageController = PageController();
   DateTime _currentDate = DateTime.now();
-  List<DateTime> _months = [];
-  int _currentIndex = 0;
+  bool _isEditing = false;
+  
+  // 無限スクロール用の大きな初期値
+  static const int _initialPage = 10000;
+  int _currentPageIndex = _initialPage;
+  
+  // 編集中の予算データを一時保存
+  Map<int, int> _pendingBudgets = {};
 
   @override
   void initState() {
     super.initState();
-    _generateMonths();
-    // 現在の月を中央に設定
-    _currentIndex = _months.indexWhere((date) =>
-        date.year == _currentDate.year && date.month == _currentDate.month);
-    if (_currentIndex == -1) _currentIndex = 12; // デフォルトで現在月
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _pageController = PageController(initialPage: _currentIndex);
-    });
-  }
-
-  void _generateMonths() {
-    // 現在から前後2年分の月を生成
-    DateTime startDate = DateTime(_currentDate.year - 2, 1);
-    DateTime endDate = DateTime(_currentDate.year + 2, 12);
-
-    _months.clear();
-    DateTime current = startDate;
-    while (current.isBefore(endDate) || current.isAtSameMomentAs(endDate)) {
-      _months.add(DateTime(current.year, current.month));
-      current = DateTime(current.year, current.month + 1);
-    }
+    _currentDate = DateTime(_currentDate.year, _currentDate.month, 1);
+    _pageController = PageController(initialPage: _initialPage);
   }
 
   String _formatMonth(DateTime date) {
     return '${date.year}年${date.month}月';
   }
 
-  void _onPageChanged(int index) {
-    setState(() {
-      _currentIndex = index;
-      _currentDate = _months[index];
-    });
-
-    // 現在選択されている年月を取得
-    print('選択された年月: ${_formatMonth(_currentDate)}');
-    print('年: ${_currentDate.year}, 月: ${_currentDate.month}');
-  }
-
   void _goToPreviousMonth() {
-    if (_currentIndex > 0) {
-      _pageController.previousPage(
-        duration: Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
+    _pageController.previousPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   void _goToNextMonth() {
-    if (_currentIndex < _months.length - 1) {
-      _pageController.nextPage(
-        duration: Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _onPageChanged(int pageIndex) {
+    setState(() {
+      _currentPageIndex = pageIndex;
+      // ページインデックスの差分から現在の月を計算
+      final monthDiff = pageIndex - _initialPage;
+      final now = DateTime.now();
+      final baseDate = DateTime(now.year, now.month, 1);
+      
+      // 月の加算・減算を正しく処理
+      DateTime newDate = baseDate;
+      if (monthDiff > 0) {
+        // 未来の月
+        for (int i = 0; i < monthDiff; i++) {
+          if (newDate.month == 12) {
+            newDate = DateTime(newDate.year + 1, 1, 1);
+          } else {
+            newDate = DateTime(newDate.year, newDate.month + 1, 1);
+          }
+        }
+      } else if (monthDiff < 0) {
+        // 過去の月
+        for (int i = 0; i < -monthDiff; i++) {
+          if (newDate.month == 1) {
+            newDate = DateTime(newDate.year - 1, 12, 1);
+          } else {
+            newDate = DateTime(newDate.year, newDate.month - 1, 1);
+          }
+        }
+      }
+      
+      _currentDate = newDate;
+    });
+    print('選択された年月: ${_formatMonth(_currentDate)}');
+  }
+
+  /// すべての予算を保存
+  Future<void> _saveBudgets() async {
+    final budgetViewModel = ref.read(budgetViewModelProvider.notifier);
+    
+    try {
+      final saveCount = _pendingBudgets.length;
+      
+      // 編集中の予算データを一括保存
+      for (final entry in _pendingBudgets.entries) {
+        final categoryId = entry.key;
+        final budgetAmount = entry.value;
+        
+        await budgetViewModel.saveBudget(
+          categoryId: categoryId,
+          budgetAmount: budgetAmount,
+          month: _currentDate,
+        );
+      }
+      
+      // 一時保存データをクリア
+      _pendingBudgets.clear();
+      
+      // データを再読み込み
+      await budgetViewModel.refresh();
+      
+      // 保存完了メッセージを表示
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${saveCount}件の予算を保存し、未来の月に引き継ぎました'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      print('予算保存エラー: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('予算の保存に失敗しました'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -85,21 +139,44 @@ class _BudgetPageState extends ConsumerState<BudgetPage> {
     return CommonScaffold(
       appBar: CommonAppBar(
         title: '予算比',
+        actions: [
+          IconButton(
+            icon: Icon(
+              _isEditing ? Icons.check : Icons.edit,
+              color: Theme.of(context).colorScheme.onPrimary,
+            ),
+            onPressed: () async {
+              if (_isEditing) {
+                // 編集完了時：すべての予算を保存
+                await _saveBudgets();
+                // 編集モードを終了してリアルタイム更新をトリガー
+                setState(() {
+                  _isEditing = false;
+                });
+              } else {
+                // 編集開始
+                setState(() {
+                  _isEditing = true;
+                });
+              }
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
           // 上部の年月表示とナビゲーションボタン
           Container(
-            color: Theme.of(context).colorScheme.secondary,
+            color: Theme.of(context).colorScheme.surface,
             padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 // 左ボタン
                 GestureDetector(
-                  onTap: _currentIndex > 0 ? _goToPreviousMonth : null,
-                  child: HugeIcon(
-                    icon: HugeIcons.strokeRoundedArrowLeft01,
+                  onTap: _goToPreviousMonth,
+                  child: Icon(
+                    Icons.arrow_back_ios_new,
                     color: Theme.of(context).colorScheme.onPrimary,
                   ),
                 ),
@@ -119,11 +196,9 @@ class _BudgetPageState extends ConsumerState<BudgetPage> {
 
                 // 右ボタン
                 GestureDetector(
-                  onTap: _currentIndex < _months.length - 1
-                      ? _goToNextMonth
-                      : null,
-                  child: HugeIcon(
-                    icon: HugeIcons.strokeRoundedArrowRight01,
+                  onTap: _goToNextMonth,
+                  child: Icon(
+                    Icons.arrow_forward_ios,
                     color: Theme.of(context).colorScheme.onPrimary,
                   ),
                 ),
@@ -140,9 +215,34 @@ class _BudgetPageState extends ConsumerState<BudgetPage> {
             child: PageView.builder(
               controller: _pageController,
               onPageChanged: _onPageChanged,
-              itemCount: _months.length,
               itemBuilder: (context, index) {
-                return _buildMonthContent(_months[index]);
+                // ページインデックスから月を計算
+                final monthDiff = index - _initialPage;
+                final now = DateTime.now();
+                final baseDate = DateTime(now.year, now.month, 1);
+                
+                DateTime pageDate = baseDate;
+                if (monthDiff > 0) {
+                  // 未来の月
+                  for (int i = 0; i < monthDiff; i++) {
+                    if (pageDate.month == 12) {
+                      pageDate = DateTime(pageDate.year + 1, 1, 1);
+                    } else {
+                      pageDate = DateTime(pageDate.year, pageDate.month + 1, 1);
+                    }
+                  }
+                } else if (monthDiff < 0) {
+                  // 過去の月
+                  for (int i = 0; i < -monthDiff; i++) {
+                    if (pageDate.month == 1) {
+                      pageDate = DateTime(pageDate.year - 1, 12, 1);
+                    } else {
+                      pageDate = DateTime(pageDate.year, pageDate.month - 1, 1);
+                    }
+                  }
+                }
+                
+                return _buildMonthContent(pageDate);
               },
             ),
           ),
@@ -158,7 +258,7 @@ class _BudgetPageState extends ConsumerState<BudgetPage> {
   // 各月のコンテンツを構築
   Widget _buildMonthContent(DateTime monthDate) {
     final budgetState = ref.watch(budgetViewModelProvider);
-    
+
     return budgetState.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stack) => Center(
@@ -181,6 +281,12 @@ class _BudgetPageState extends ConsumerState<BudgetPage> {
           return BudgetCard(
             categoryState: category,
             monthDate: monthDate,
+            isEditing: _isEditing,
+            onBudgetInputChanged: (categoryId, budgetAmount) {
+              // 予算入力を一時保存
+              _pendingBudgets[categoryId] = budgetAmount;
+              print('予算入力: カテゴリ$categoryId = ¥$budgetAmount');
+            },
           );
         },
       ),

@@ -103,6 +103,11 @@ class DatabaseService {
     return _transactionRepository.watchAllTransactionsWithCategory();
   }
 
+  /// すべての取引を取得（削除されたカテゴリの支出も含む）
+  Future<List<TransactionWithCategory>> getAllTransactionsWithOptionalCategory() async {
+    return await _transactionRepository.getAllTransactionsWithOptionalCategory();
+  }
+
   /// IDで取引を取得
   Future<Transaction?> getTransactionById(int id) async {
     return await _transactionRepository.getTransactionById(id);
@@ -160,18 +165,23 @@ class DatabaseService {
   /// 予算を保存・更新
   Future<int> saveBudget({
     int? id,
-    int? budgetAmount,
-    int? spentAmount,
-    DateTime? startDate,
-    DateTime? endDate,
+    required int categoryId,
+    required int year,
+    required int month,
+    required int budgetAmount,
   }) async {
     return await _budgetRepository.saveBudget(
       id: id,
+      categoryId: categoryId,
+      year: year,
+      month: month,
       budgetAmount: budgetAmount,
-      spentAmount: spentAmount,
-      startDate: startDate,
-      endDate: endDate,
     );
+  }
+
+  /// 特定のカテゴリと年月の予算を取得
+  Future<Budget?> getBudgetByCategoryAndMonth(int categoryId, int year, int month) async {
+    return await _budgetRepository.getBudgetByCategoryAndMonth(categoryId, year, month);
   }
 
   /// 予算を削除

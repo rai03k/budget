@@ -6,7 +6,7 @@ part of 'calendar_view_model.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$calendarViewModelHash() => r'5b0490c4d2ab80edfc9435adf0c2b31cd6b38a58';
+String _$calendarViewModelHash() => r'9894ce8e652e5007d4a82a345a7eb7cd925464d5';
 
 /// See also [CalendarViewModel].
 @ProviderFor(CalendarViewModel)

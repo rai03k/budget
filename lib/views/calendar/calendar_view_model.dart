@@ -20,18 +20,25 @@ class CalendarViewModel extends _$CalendarViewModel {
     // ref.watch(transactionProvider); // 一時的にコメントアウト
     
     try {
-      final transactionsWithCategory = await _databaseService.getAllTransactionsWithCategory();
+      // 削除されたカテゴリの支出も含めて取得
+      final transactionsWithCategory = await _databaseService.getAllTransactionsWithOptionalCategory();
 
       final transactionStates = transactionsWithCategory.map((transactionWithCategory) {
         final transaction = transactionWithCategory.transaction;
         final category = transactionWithCategory.category;
 
-        final categoryState = CategoryState(
-          id: category.id,
-          title: category.categoryName,
-          icon: category.icon,
-          color: category.iconColor,
-        );
+        // カテゴリが削除されている場合は「不明」カテゴリを使用
+        final CategoryState categoryState;
+        if (category == null) {
+          categoryState = CategoryState.unknownCategory;
+        } else {
+          categoryState = CategoryState(
+            id: category.id,
+            title: category.categoryName,
+            icon: category.icon,
+            color: category.iconColor,
+          );
+        }
 
         return TransactionState(
           id: transaction.id,
@@ -188,18 +195,25 @@ class CalendarViewModel extends _$CalendarViewModel {
     final currentState = await future;
     
     try {
-      final transactionsWithCategory = await _databaseService.getAllTransactionsWithCategory();
+      // 削除されたカテゴリの支出も含めて取得
+      final transactionsWithCategory = await _databaseService.getAllTransactionsWithOptionalCategory();
 
       final transactionStates = transactionsWithCategory.map((transactionWithCategory) {
         final transaction = transactionWithCategory.transaction;
         final category = transactionWithCategory.category;
 
-        final categoryState = CategoryState(
-          id: category.id,
-          title: category.categoryName,
-          icon: category.icon,
-          color: category.iconColor,
-        );
+        // カテゴリが削除されている場合は「不明」カテゴリを使用
+        final CategoryState categoryState;
+        if (category == null) {
+          categoryState = CategoryState.unknownCategory;
+        } else {
+          categoryState = CategoryState(
+            id: category.id,
+            title: category.categoryName,
+            icon: category.icon,
+            color: category.iconColor,
+          );
+        }
 
         return TransactionState(
           id: transaction.id,

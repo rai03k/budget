@@ -41,6 +41,69 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     return _scrollControllers.putIfAbsent(key, () => ScrollController());
   }
 
+  /// ボトムシートがかぶる場合のスクロール処理
+  void _scrollToAvoidBottomSheet(DateTime pageDate, double cellPosition) {
+    print("🔍 スクロール処理開始: pageDate=$pageDate, cellPosition=$cellPosition");
+    
+    final scrollController = _getOrAllocateScrollController(pageDate);
+    print("📱 ScrollController info: hasClients=${scrollController.hasClients}");
+    
+    // ScrollControllerが有効でない場合は少し待ってから再試行
+    if (!scrollController.hasClients) {
+      print("⏳ ScrollController待機中...");
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (scrollController.hasClients) {
+          _scrollToAvoidBottomSheet(pageDate, cellPosition);
+        } else {
+          print("❌ ScrollController再試行後も使用不可");
+        }
+      });
+      return;
+    }
+    
+    final screenHeight = MediaQuery.of(context).size.height;
+    final bottomSheetHeight = screenHeight * 0.3; // ボトムシートの高さ（30%）
+    final bottomSheetTopY = screenHeight - bottomSheetHeight; // ボトムシートの上端
+    final margin = 150; // 余白をさらに大きく（セルとボトムシートの間に十分な空間を確保）
+    
+    print("📏 screen: $screenHeight, bottomSheetTop: $bottomSheetTopY, cellBottom: $cellPosition");
+    print("🔍 計算: cellPosition($cellPosition) + margin($margin) = ${cellPosition + margin}");
+    print("🔍 判定: ${cellPosition + margin} > $bottomSheetTopY = ${cellPosition + margin > bottomSheetTopY}");
+    
+    // より積極的にスクロール：セルがボトムシートに近い場合（余白200px）
+    final shouldScroll = cellPosition + 200 > bottomSheetTopY;
+    print("🎯 最終判定: cellPosition($cellPosition) + 200 > bottomSheetTop($bottomSheetTopY) = $shouldScroll");
+    
+    if (shouldScroll) {
+      print("✅ スクロールが必要");
+      
+      // セルがボトムシートの上端から200px上に来るようにスクロール量を計算
+      final scrollOffset = (cellPosition + 200) - bottomSheetTopY;
+      final currentOffset = scrollController.offset;
+      final targetOffset = currentOffset + scrollOffset;
+      final maxOffset = scrollController.position.maxScrollExtent;
+      
+      // スクロール可能な範囲内でスクロール
+      final clampedOffset = targetOffset.clamp(0.0, maxOffset);
+      
+      print("📍 scrollOffset: $scrollOffset, current: $currentOffset, target: $targetOffset, clamped: $clampedOffset, max: $maxOffset");
+      
+      // 即座にスクロールを実行
+      try {
+        print("🎬 スクロールアニメーション開始");
+        scrollController.animateTo(
+          clampedOffset,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+        );
+      } catch (e) {
+        print("❌ スクロールエラー: $e");
+      }
+    } else {
+      print("❌ スクロール不要: cellPosition($cellPosition) + 200 <= bottomSheetTop($bottomSheetTopY)");
+    }
+  }
+
   @override
   void dispose() {
     _pageController?.dispose();
@@ -407,7 +470,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     return GestureDetector(
       key: key,
       // タップされたらViewModelのselectDateメソッドを呼び出す
-      onTap: () {
+      onTap: () async {
         print("❤️ タップされました: $date");
 
         double position = 0;
@@ -417,7 +480,13 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
           final size = renderBox.size;
           position = posi.dy + renderBox.size.height;
           print('位置: ${posi.dy}, 高さ: ${size.height}');
-          // → 必要に応じてここで処理（例: showModalAtPosition(position.dy) など）
+          
+          // ボトムシートがセルにかぶる場合のスクロール処理を先に実行
+          final pageDate = DateTime(date.year, date.month, 1);
+          _scrollToAvoidBottomSheet(pageDate, position);
+          
+          // 少し待ってからボトムシートを表示
+          await Future.delayed(const Duration(milliseconds: 150));
         }
 
         //print("💕cellGlobalRect: $cellGlobalRect, 位置: ${position.dy}");

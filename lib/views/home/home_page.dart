@@ -32,50 +32,11 @@ class HomePage extends ConsumerWidget {
                 _buildWeeklyExpenseReview(context),
                 const SizedBox(height: 24),
 
-                // 節約額セクション
-                Row(
-                  children: [
-                    Text(
-                      '節約額',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onPrimary,
-                      ),
-                    ),
-                    const SizedBox(
-                      width: 8,
-                    ),
-                    CircleAvatar(
-                      radius: 12,
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      child: IconButton(
-                        padding: EdgeInsets.zero,
-                        iconSize: 18,
-                        icon: Icon(
-                          Icons.question_mark,
-                          color: Theme.of(context).colorScheme.onPrimary,
-                        ),
-                        onPressed: () {
-                          _showHelpDialog(context);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-
                 // 支出データの表示
                 homeState.when(
                   data: (state) => Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSavingsCard(
-                        context: context, 
-                        savings: NumberFormat('#,###').format(state.totalSavings)
-                      ),
-                      const SizedBox(height: 24),
-
                       // 最近の支出セクション
                       Text(
                         '最近の支出',
@@ -91,8 +52,10 @@ class HomePage extends ConsumerWidget {
                       _buildExpenseCard(
                         context: context,
                         title: '今日の支出',
-                        amount: NumberFormat('#,###').format(state.todayExpense),
-                        comparison: '昨日 ¥${NumberFormat('#,###').format(state.yesterdayExpense)}',
+                        amount:
+                            NumberFormat('#,###').format(state.todayExpense),
+                        comparison:
+                            '昨日 ¥${NumberFormat('#,###').format(state.yesterdayExpense)}',
                         percentage: state.yesterdayComparison,
                       ),
                       const SizedBox(height: 16),
@@ -101,8 +64,10 @@ class HomePage extends ConsumerWidget {
                       _buildExpenseCard(
                         context: context,
                         title: '今週の支出',
-                        amount: NumberFormat('#,###').format(state.thisWeekExpense),
-                        comparison: '先週 ¥${NumberFormat('#,###').format(state.lastWeekExpense)}',
+                        amount:
+                            NumberFormat('#,###').format(state.thisWeekExpense),
+                        comparison:
+                            '先週 ¥${NumberFormat('#,###').format(state.lastWeekExpense)}',
                         percentage: state.lastWeekComparison,
                       ),
                       const SizedBox(height: 16),
@@ -111,8 +76,10 @@ class HomePage extends ConsumerWidget {
                       _buildExpenseCard(
                         context: context,
                         title: '今月の支出',
-                        amount: NumberFormat('#,###').format(state.thisMonthExpense),
-                        comparison: '先月 ¥${NumberFormat('#,###').format(state.lastMonthExpense)}',
+                        amount: NumberFormat('#,###')
+                            .format(state.thisMonthExpense),
+                        comparison:
+                            '先月 ¥${NumberFormat('#,###').format(state.lastMonthExpense)}',
                         percentage: state.lastMonthComparison,
                       ),
                     ],
@@ -242,7 +209,8 @@ class HomePage extends ConsumerWidget {
                   getComparisonText(percentage),
                   style: TextStyle(
                     fontSize: 16,
-                    color: _getComparisonColor(context, getComparisonType(percentage)),
+                    color: _getComparisonColor(
+                        context, getComparisonType(percentage)),
                   ),
                 ),
                 const SizedBox(
@@ -251,7 +219,8 @@ class HomePage extends ConsumerWidget {
                 Icon(
                   _getComparisonIcon(getComparisonType(percentage)),
                   size: 20,
-                  color: _getComparisonColor(context, getComparisonType(percentage)),
+                  color: _getComparisonColor(
+                      context, getComparisonType(percentage)),
                 ),
               ],
             ),

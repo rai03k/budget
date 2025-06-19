@@ -7,7 +7,7 @@ part of 'weekly_expense_review_view_model.dart';
 // **************************************************************************
 
 String _$weeklyExpenseReviewViewModelHash() =>
-    r'86587c78d265c0cb74596a445f21bbcca17bc67b';
+    r'1de6c2a750934df4797e01f5ee655942b7225e78';
 
 /// See also [WeeklyExpenseReviewViewModel].
 @ProviderFor(WeeklyExpenseReviewViewModel)

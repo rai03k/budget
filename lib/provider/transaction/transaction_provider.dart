@@ -32,18 +32,24 @@ class Transaction extends _$Transaction {
   }
 
   Future<List<TransactionState>> loadTransactions() async {
-    final transactionsWithCategory = await _databaseService.getAllTransactionsWithCategory();
+    final transactionsWithCategory = await _databaseService.getAllTransactionsWithOptionalCategory();
 
     return transactionsWithCategory.map((transactionWithCategory) {
       final transaction = transactionWithCategory.transaction;
       final category = transactionWithCategory.category;
       
-      final categoryState = CategoryState(
-        id: category.id,
-        title: category.categoryName,
-        icon: category.icon,
-        color: category.iconColor,
-      );
+      // カテゴリが削除されている場合は「不明」カテゴリを使用
+      final CategoryState categoryState;
+      if (category == null) {
+        categoryState = CategoryState.unknownCategory;
+      } else {
+        categoryState = CategoryState(
+          id: category.id,
+          title: category.categoryName,
+          icon: category.icon,
+          color: category.iconColor,
+        );
+      }
 
       return TransactionState(
         id: transaction.id,

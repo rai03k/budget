@@ -36,8 +36,8 @@ class AppColorsConverter extends TypeConverter<AppColors, String> {
 // --- JOINの結果を格納するためのデータクラス ---
 class TransactionWithCategory {
   final Transaction transaction;
-  final Category category;
-  TransactionWithCategory({required this.transaction, required this.category});
+  final Category? category; // nullableに変更
+  TransactionWithCategory({required this.transaction, this.category});
 }
 
 // --- データベース本体の定義 ---
@@ -49,7 +49,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
   
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
   
   // シングルトンパターンを実装
   static AppDatabase? _instance;
@@ -154,6 +154,20 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
       (select(transactionTable)
         ..where((t) => t.date.isBetweenValues(start, end)))
       .get();
+
+  // すべての取引をカテゴリ情報と一緒に取得（削除されたカテゴリも含む）
+  Future<List<TransactionWithCategory>> getAllTransactionsWithOptionalCategory() {
+    final query = select(transactionTable).join([
+      leftOuterJoin(categoryTable,
+          categoryTable.id.equalsExp(transactionTable.categoryId))
+    ]);
+    return query.get().then((rows) => rows
+        .map((row) => TransactionWithCategory(
+              transaction: row.readTable(transactionTable),
+              category: row.readTableOrNull(categoryTable), // nullの場合も許可
+            ))
+        .toList());
+  }
 }
 
 @DriftAccessor(tables: [BudgetTable])
@@ -169,6 +183,13 @@ class BudgetDao extends DatabaseAccessor<AppDatabase> with _$BudgetDaoMixin {
   // IDで予算を取得
   Future<Budget?> getBudgetById(int id) =>
       (select(budgetTable)..where((b) => b.id.equals(id))).getSingleOrNull();
+  
+  // カテゴリと年月で予算を取得
+  Future<Budget?> getBudgetByCategoryAndMonth(int categoryId, int year, int month) =>
+      (select(budgetTable)
+        ..where((b) => b.categoryId.equals(categoryId) & 
+                      b.year.equals(year) & 
+                      b.month.equals(month))).getSingleOrNull();
   
   // 予算を保存・更新
   Future<int> saveBudget(BudgetTableCompanion entry) =>

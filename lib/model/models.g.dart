@@ -43,6 +43,7 @@ const _$CategoryIconsEnumMap = {
   CategoryIcons.work: 'work',
   CategoryIcons.school: 'school',
   CategoryIcons.carRental: 'carRental',
+  CategoryIcons.question: 'question',
 };
 
 const _$AppColorsEnumMap = {
