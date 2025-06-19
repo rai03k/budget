@@ -14,6 +14,9 @@ class CalendarViewModel extends _$CalendarViewModel {
 
   @override
   Future<CalendarState> build() async {
+    // 取引データの変更を監視するために、transactionProviderに依存
+    ref.watch(transactionProvider);
+    
     try {
       final transactionsWithCategory = await _databaseService.getAllTransactionsWithCategory();
 
@@ -134,6 +137,34 @@ class CalendarViewModel extends _$CalendarViewModel {
           final color = transaction.category.color;
           if (!seenColors.contains(color)) {
             seenColors.add(color);
+            ret.add(transaction.category);
+          }
+        }
+        return ret;
+      },
+      loading: () => [],
+      error: (_, __) => [],
+    );
+  }
+
+  /// 指定した日付の取引で使用されているカテゴリを取得
+  List<CategoryState> getCategoriesForDate(DateTime date) {
+    return state.when(
+      data: (calendarState) {
+        final seenCategories = <int>{};
+        final ret = <CategoryState>[];
+
+        final dailyTransactions = calendarState.transactions
+            .where((t) =>
+                t.date.year == date.year &&
+                t.date.month == date.month &&
+                t.date.day == date.day)
+            .toList();
+
+        for (final transaction in dailyTransactions) {
+          final categoryId = transaction.category.id;
+          if (!seenCategories.contains(categoryId)) {
+            seenCategories.add(categoryId);
             ret.add(transaction.category);
           }
         }

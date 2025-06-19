@@ -388,7 +388,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     Color? expenseColor;
     final int? expense = viewModel.getExpenseForDate(date);
     final transactions = viewModel.getTransactionsForDate(date);
-    final categoryColors = viewModel.getCategoryColors();
+    final categoryColors = viewModel.getCategoriesForDate(date); // 特定日付のカテゴリを取得
 
     final maxVisible = 4;
     final visibleTransactions = categoryColors.take(maxVisible).toList();

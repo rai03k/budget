@@ -12,6 +12,9 @@ class BudgetViewModel extends _$BudgetViewModel {
 
   @override
   Future<BudgetPageState> build() async {
+    // カテゴリーデータの変更を監視するために、categoryProviderに依存
+    ref.watch(categoryProvider);
+    
     try {
       // Driftからカテゴリ一覧を取得
       final categories = await _databaseService.getAllCategories();

@@ -6,7 +6,7 @@ part of 'budget_view_model.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$budgetViewModelHash() => r'6f08ac89cc7d270294c3b4f022f5f1644c05c83e';
+String _$budgetViewModelHash() => r'7b27711d8214fae38598930cbc6488fdeea61797';
 
 /// See also [BudgetViewModel].
 @ProviderFor(BudgetViewModel)

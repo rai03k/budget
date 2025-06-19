@@ -7,7 +7,7 @@ part of 'scanner_result_view_model.dart';
 // **************************************************************************
 
 String _$scannerResultViewModelHash() =>
-    r'61c4cd891c2ae0d6dacef6c848e59152b34478ed';
+    r'21e5875941686d8600f3e25cba7bd40f5652b798';
 
 /// See also [ScannerResultViewModel].
 @ProviderFor(ScannerResultViewModel)

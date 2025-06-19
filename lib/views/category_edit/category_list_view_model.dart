@@ -1,6 +1,9 @@
 // lib/viewmodel/category_edit_view_model.dart
-import 'package:budget/data/local/app_database.dart';
+import 'package:budget/data/local/app_database.dart' as db;
 import 'package:budget/service/database_service.dart';
+import 'package:budget/provider/category/category_provider.dart';
+import 'package:budget/views/budget/budget_view_model.dart';
+import 'package:budget/views/input/input_view_model.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'category_list_view_model.g.dart';
@@ -10,7 +13,7 @@ class CategoryListViewModel extends _$CategoryListViewModel {
   final DatabaseService _databaseService = DatabaseService.instance;
 
   @override
-  Future<List<Category>> build() async {
+  Future<List<db.Category>> build() async {
     final categories = await _databaseService.getAllCategories();
     return categories;
   }
@@ -35,6 +38,15 @@ class CategoryListViewModel extends _$CategoryListViewModel {
           sortOrder: i,
         );
       }
+      
+      // カテゴリ順序変更後に関連Providerを無効化
+      ref.invalidate(categoryProvider);           // カテゴリプロバイダー
+      ref.invalidate(budgetViewModelProvider);    // 予算画面
+      ref.invalidate(inputViewModelProvider);     // 入力画面
+      
+      // 自分自身も再読み込み
+      state = const AsyncValue.loading();
+      state = await AsyncValue.guard(() => build());
     }
   }
 
